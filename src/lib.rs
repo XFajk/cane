@@ -1,12 +1,4 @@
-use wasm_bindgen::prelude::*;
-
-#[wasm_bindgen]
-extern "C" {
-    fn alert(s: &str);
-}
-
-#[wasm_bindgen]
-pub fn say_something(s: &str) {
-    alert(s);
-}
-
+mod math;
+mod color;
+mod collision;
+mod render;
