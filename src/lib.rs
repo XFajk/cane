@@ -1,4 +1,4 @@
-mod math;
-mod color;
-mod collision;
-mod render;
+pub mod math;
+pub mod color;
+pub mod collision;
+pub mod render;
