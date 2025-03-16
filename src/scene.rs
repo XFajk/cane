@@ -3,21 +3,21 @@ use std::{cell::RefCell, collections::VecDeque};
 pub type SceneQueue = VecDeque<Box<dyn Scene>>;
 
 thread_local! {
-    pub static CONSTRUCTOR_QUEUE: RefCell<VecDeque<Box<dyn FnMut() -> Box<dyn Scene>>>> = RefCell::new(VecDeque::new());
+    pub static CONSTRUCTOR_QUEUE: RefCell<VecDeque<Box<dyn Scene>>> = RefCell::new(VecDeque::new());
 }
 
-pub fn schedule_scene(scene_constructor: Box<dyn FnMut() -> Box<dyn Scene>>) {
+pub fn schedule_scene(scheduled_scene: Box<dyn Scene>) {
     CONSTRUCTOR_QUEUE
-        .with_borrow_mut(move |constructor_queue| constructor_queue.push_back(scene_constructor));
+        .with_borrow_mut(move |constructor_queue| constructor_queue.push_back(scheduled_scene));
 }
 
 pub fn transfer_scheduled_scenes(scenes: &mut SceneQueue) {
-    CONSTRUCTOR_QUEUE.with_borrow_mut(|constructor_queue| {
-        for constructor in constructor_queue.iter_mut() {
-            scenes.push_back(constructor());
+    CONSTRUCTOR_QUEUE.with(|constructor_queue_cell| {
+        let constructor_queue = std::mem::replace(&mut *constructor_queue_cell.borrow_mut(), VecDeque::new());
+        
+        for scene in constructor_queue.into_iter() {
+            scenes.push_back(scene);
         }
-
-        constructor_queue.clear();
     });
 }
 
