@@ -3,7 +3,7 @@ use std::{cell::RefCell, collections::VecDeque};
 pub type SceneQueue = VecDeque<Box<dyn Scene>>;
 
 thread_local! {
-    pub static NEW_SCENE_QUEUE: RefCell<VecDeque<Box<dyn Scene>>> = RefCell::new(VecDeque::new());
+    static NEW_SCENE_QUEUE: RefCell<VecDeque<Box<dyn Scene>>> = RefCell::new(VecDeque::new());
 }
 
 pub fn schedule_scene(scheduled_scene: Box<dyn Scene>) {
