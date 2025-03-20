@@ -1,7 +1,5 @@
-use std::{cell::RefCell, collections::VecDeque};
+use std::{cell::RefCell, collections::VecDeque, rc::Rc};
 pub use uuid::Uuid;
-
-pub type SceneQueue = VecDeque<(Uuid, Box<dyn Scene>)>;
 
 pub trait Scene {
     fn update(&mut self, dt: f32);
@@ -11,15 +9,23 @@ pub trait Scene {
     fn is_scheduled_for_removal(&self) -> bool;
 }
 
+pub struct SceneHolder {
+    id: Rc<Uuid>,
+    name: Option<Rc<str>>,
+    pub scene: Box<dyn Scene>
+}
+
+pub type SceneQueue = VecDeque<SceneHolder>;
+
 pub trait SceneQueueModifier {
     fn modify(&mut self, scene_queue: &mut SceneQueue);
 }
 
-pub struct PushSceneMod(Option<Box<dyn Scene>>);
+pub struct PushSceneMod(Option<SceneHolder>);
 
 impl SceneQueueModifier for PushSceneMod {
     fn modify(&mut self, scene_queue: &mut SceneQueue) {
-        scene_queue.push_front((Uuid::new_v4(), self.0.take().unwrap()));
+        scene_queue.push_front(self.0.take().unwrap());
     }
 }
 
@@ -31,11 +37,11 @@ impl SceneQueueModifier for PopSceneMod {
     }
 }
 
-pub struct RemoveSceneMod(Uuid);
+pub struct RemoveSceneMod(pub Uuid);
 
 impl SceneQueueModifier for RemoveSceneMod {
     fn modify(&mut self, scene_queue: &mut SceneQueue) {
-        scene_queue.retain(|scene| scene.0 != self.0);
+        scene_queue.retain(|scene| *scene.id != self.0);
     }
 }
 
@@ -44,9 +50,15 @@ thread_local! {
 }
 
 pub fn schedule_scene(new_scene: Box<dyn Scene>) {
-    SCENE_MODIFIER_QUEUE.with_borrow_mut(move |modifier_queue| {
-        modifier_queue.push_front(Box::new(PushSceneMod(Some(new_scene))));
-    });
+    SCENE_MODIFIER_QUEUE.with_borrow_mut(move |modifier_queue| modifier_queue.push_front(Box::new(PushSceneMod(Some(SceneHolder {
+        id: Rc::new(Uuid::new_v4()),
+        name: None,
+        scene: new_scene,
+    })))));
+}
+
+pub fn schedule_scene_pop() {
+    SCENE_MODIFIER_QUEUE.with_borrow_mut(|modifier_queue| modifier_queue.push_front(Box::new(PopSceneMod)));
 }
 
 pub fn apply_modifier_to_scenes(scene_queue: &mut SceneQueue) {
