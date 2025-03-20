@@ -1,3 +1,4 @@
+use crate::management::GameObject;
 use std::{cell::RefCell, collections::VecDeque, rc::Rc};
 pub use uuid::Uuid;
 
@@ -9,12 +10,7 @@ pub trait Scene {
     fn is_scheduled_for_removal(&self) -> bool;
 }
 
-pub struct SceneHolder {
-    id: Rc<Uuid>,
-    name: Option<Rc<str>>,
-    pub scene: Box<dyn Scene>
-}
-
+type SceneHolder = GameObject<Box<dyn Scene>>;
 pub type SceneQueue = VecDeque<SceneHolder>;
 
 pub trait SceneQueueModifier {
@@ -50,15 +46,18 @@ thread_local! {
 }
 
 pub fn schedule_scene(new_scene: Box<dyn Scene>) {
-    SCENE_MODIFIER_QUEUE.with_borrow_mut(move |modifier_queue| modifier_queue.push_front(Box::new(PushSceneMod(Some(SceneHolder {
-        id: Rc::new(Uuid::new_v4()),
-        name: None,
-        scene: new_scene,
-    })))));
+    SCENE_MODIFIER_QUEUE.with_borrow_mut(move |modifier_queue| {
+        modifier_queue.push_front(Box::new(PushSceneMod(Some(SceneHolder {
+            id: Rc::new(Uuid::new_v4()),
+            name: None,
+            object: new_scene,
+        }))))
+    });
 }
 
 pub fn schedule_scene_pop() {
-    SCENE_MODIFIER_QUEUE.with_borrow_mut(|modifier_queue| modifier_queue.push_front(Box::new(PopSceneMod)));
+    SCENE_MODIFIER_QUEUE
+        .with_borrow_mut(|modifier_queue| modifier_queue.push_front(Box::new(PopSceneMod)));
 }
 
 pub fn apply_modifier_to_scenes(scene_queue: &mut SceneQueue) {
