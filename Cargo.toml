@@ -7,4 +7,3 @@ edition = "2024"
 crate-type = ["cdylib", "rlib"]
 
 [dependencies]
-uuid = { version = "1.16.0", features = ["v4"] }

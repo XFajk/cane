@@ -58,7 +58,7 @@ impl<T> Animation<T> {
         self.finished = false;
 
         if self.time_elapsed >= self.frames[self.current_frame].duration {
-            self.time_elapsed = 0.;
+            self.time_elapsed = self.time_elapsed - self.frames[self.current_frame].duration;
             
             if self.current_frame+1 >= self.frames.len() {
                 self.finished = true;
