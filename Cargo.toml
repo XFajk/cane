@@ -7,3 +7,8 @@ edition = "2024"
 crate-type = ["cdylib", "rlib"]
 
 [dependencies]
+macroquad = { version = "0.4.14", optional = true }
+
+[features]
+macroquad = ["dep:macroquad"]
+
